@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 from os.path import exists
 
-process = 'medicalrecords'
+process = 'NonCodify'
 print(exists(f'../ML Training/training data/{process}_training_data.csv'))
 inputs = pd.read_csv(f'../ML Training/training data/{process}_training_data.csv')
 
@@ -68,15 +68,12 @@ def Category(training_data, process):
 
 def Status(training_data, process):
     training_data['Form Letter'] = training_data['Form Letter'].astype('int64')
-    if process == 'Bundling':
-        training_data['Proofs'] = training_data['Proofs'].astype('int64')
-    elif process == 'medicalrecords':
-        training_data['Records'] = training_data['Records'].astype('int64')
+    training_data['Proofs'] = training_data['Proofs'].astype('int64')
     training_data['ACK'] = training_data['ACK'].astype('int64')
 
     # converts the values into numbers
     training_data['payer_n'] = le_payer.fit_transform(training_data['PAYER'])
-    if process == 'Bundling':
+    if process == 'NonCodify':
         training_data['coding_tool_n'] = le_coding_tool.fit_transform(training_data['Coding Tool'])
     elif process == 'medicalrecords':
         training_data['process_n'] = le_coding_tool.fit_transform(training_data['Process'])
@@ -84,11 +81,14 @@ def Status(training_data, process):
     training_data['pic_desc_n'] = le_pic_desc.fit_transform(training_data['PIC Desc'])
 
     training = training_data.copy()
-    training['status_n'] = le_status.fit_transform(training_data['Status'])
+    test = pd.DataFrame()
+    test['Status'] = training_data['Status'].unique()
+    test['status_n'] = le_status.fit_transform(test['Status'])
+    training['status_n'] = le_status.fit_transform(training['Status'])
 
-    training_data = training_data.drop(columns = ['PAYER', 'Process', 'SHS Status', 'PIC Desc',
+    training_data = training_data.drop(columns = ['PAYER', 'Coding Tool', 'SHS Status', 'PIC Desc',
                                                   'Category', 'Status', 'Comment'], axis = 'columns')
-    training = training.drop(columns = ['PAYER', 'Process', 'SHS Status', 'PIC Desc', 'Category', 'Comment'],
+    training = training.drop(columns = ['PAYER', 'Coding Tool', 'SHS Status', 'PIC Desc', 'Category', 'Comment'],
                              axis = 'columns')
 
     # sets the keys for the data you are feeding it
@@ -101,6 +101,7 @@ def Status(training_data, process):
 
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
+    status = le_status.inverse_transform(predictions)
 
     accuracy = accuracy_score(y_test, predictions)
     print(accuracy)
@@ -151,4 +152,4 @@ def Comment(training_data, process):
 
     joblib.dump(model, f'../ML Training/models/{process}_audit_comment.joblib')
 
-Category(inputs, 'medicalrecords')
+Status(inputs, 'NonCodify')
