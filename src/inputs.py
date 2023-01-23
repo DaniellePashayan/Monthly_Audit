@@ -3,7 +3,6 @@ import os
 import re
 from configparser import ConfigParser
 from glob import glob
-
 import pandas as pd
 from progressbar import ProgressBar
 
@@ -16,7 +15,6 @@ def denied_cpt_list(x):
 
 def input_combine(process):
 
-    bar = ProgressBar(redirect_stdout=True)
     config_path = 'config.ini'
     config = ConfigParser()
     config.read(config_path)
@@ -39,19 +37,20 @@ def input_combine(process):
         if config[process]['BotType'] == 'Bundling':
             print(f'Combining inputs for {process}')
             input_paths = config[process]['InputFilePath'].split(',')
+            df = []
             for path in input_paths:
                 i = input_paths.index(path)
                 folder_name = path + '**Inbound_' + str(Month) + '**' + str(Year) + '*' + '.xls'
 
-                df = []
-                for file in bar(glob(folder_name)):
+                for file in glob(folder_name):
                     data = pd.read_excel(file, engine='xlrd', sheet_name='Sheet1')
                     file_date = re.search('([0-9]){8,8}(?=\D)', file).group()
                     file_date = dt.datetime.strptime(file_date, "%m%d%Y")
                     data['File Date'] = file_date
                     df.append(data)
-                if len(df) > 0:
-                    df = pd.concat(df)
+
+            if len(df) > 0:
+                df = pd.concat(df)
 
             df_denied = df.copy()
             df_denied = df_denied[df_denied['Txn Rej R C List'].str.contains("UNBUNDLED")]
@@ -67,5 +66,33 @@ def input_combine(process):
             coding_tools = pd.read_csv('../References/Coding Tools.csv')
             df_new = df_new.merge(coding_tools, how='left', left_on=['PAYER'], right_on=['PAYER'])
 
-        df_new.to_excel(output_file, index = None)
-        return df_new
+            df_new.to_excel(output_file, index = None)
+            return df_new
+        if config[process]['BotType'] == 'MedicalRecords':
+
+            input_paths = config[process]['InputFilePath'].split(',')
+            processes = config[process]['InputProcesses'].split(',')
+
+            df = []
+            for path in input_paths:
+                i = input_paths.index(path)
+                print(f'Combining inputs for {processes[i]}')
+                folder_name = path + '**Inbound_' + str(Month) + '**' + str(Year) + '*' + '.xls'
+
+                for file in glob(folder_name):
+                    data = pd.read_excel(file, engine='xlrd', sheet_name='Sheet1')
+                    file_date = re.search('([0-9]){8,8}(?=\D)', file).group()
+                    file_date = dt.datetime.strptime(file_date, "%m%d%Y")
+                    data['File Date'] = file_date
+                    data['Process'] = processes[i]
+                    data = data[['INVNUM', 'File Date', 'PAYER', 'Process']]
+                    df.append(data)
+            if len(df) > 0:
+                df = pd.concat(df)
+
+            df = df.drop_duplicates()
+
+            df.to_excel(output_file, index = None)
+            return df
+
+input_combine('Medical Records')
