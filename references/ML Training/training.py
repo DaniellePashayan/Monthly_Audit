@@ -33,7 +33,6 @@ def Status(training_data, process):
 
     training = training_data.copy()
     training['status_n'] = le_status.fit_transform(training['Status'])
-    print(le_status.classes_)
     np.save('status_classes.npy', le_status.classes_)
     np.save('payer_classes.npy', le_payer.classes_)
     np.save('coding_tool_classes.npy', le_coding_tool.classes_)

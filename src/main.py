@@ -2,6 +2,7 @@ import os
 from inputs import input_combine
 from outputs import output_combine
 from sutherland import sutherland_combine
+from function import merge_format, predict
 
 
 def connection_status():
@@ -22,9 +23,11 @@ def connection_status():
 
 def run(process):
     if connection_status():
-        # inputs = input_combine(process)
-        # outputs = output_combine(process)
+        inputs = input_combine(process)
+        outputs = output_combine(process)
         shs = sutherland_combine(process)
+        formatted = merge_format(inputs, outputs, shs, process)
+        final = predict(formatted)
         print('done')
 
     else:
