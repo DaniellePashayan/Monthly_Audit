@@ -5,6 +5,7 @@ import numpy as np
 import joblib
 import datetime as dt
 
+
 def merge_format(input, output, shs, process):
     config_path = 'config.ini'
     config = ConfigParser()
@@ -21,8 +22,8 @@ def merge_format(input, output, shs, process):
     pics.columns = ['Invoice', 'Post Date', 'Code']
     pics['Post Date'] = pd.to_datetime(pics['Post Date'])
 
-    pic_desc = ''
-    pic_desc = pd.read_excel('')
+    pic_desc = pd.read_excel('C:/Users/dpashayan/PycharmProjects/Monthly_Audit/'
+                             'references/Dictionary 6 - RPA Only Rejections.xlsx', engine='openpyxl')
     pics = pics.merge(pic_desc, how = 'left')
     pics = pics[pics['Bot Name'].str.contains('Bundling')]
 
@@ -34,18 +35,13 @@ def merge_format(input, output, shs, process):
                   right_on = ['Invoice', 'Post Date'])
     output['Process'] = output['Process'].str.strip()
     df = pd.merge(df, output, how = 'left',
-                  left_on = ['INVNUM', 'File Date', 'Coding Tool'],
+                  left_on = ['INVNUM', 'File Date', 'Process'],
                   right_on = ['Invoice', 'File Date', 'Process'])
     df.drop(columns = ['SHS Name', 'Invoice_x', 'Name', 'Bot Type', 'Bot Name', 'Invoice_y', 'Process'], inplace = True)
 
-    inputs = ''
-    outputs = ''
-    shs = ''
-    pic_desc = ''
-    pics = ''
-
     df = df.fillna('0').astype('str')
     return df
+
 
 def predict(source, process):
     source.fillna('0', inplace = True)
@@ -69,16 +65,17 @@ def predict(source, process):
     source = source.fillna('0')
     source['ACK'] = source['ACK'].astype('int64')
     source['Form Letter'] = source['Form Letter'].astype('int64')
-    source['Proofs'] = source['Proofs'].astype('int64')
-    new = source[['ACK', 'Form Letter', 'Proofs']]
+    source['Records'] = source['Records'].astype('int64')
+
+    new = source[['ACK', 'Form Letter', 'Records']]
     new['payer_n'] = le_payer.transform(source['PAYER'])
-    new['coding_tool_n'] = le_coding_tool.transform(source['Coding Tool'])
+    new['process_n'] = le_coding_tool.transform(source['Process'])
     new['shs_status_n'] = le_shs_status.transform(source['RetrievalStatus'])
     new['pic_desc_n'] = le_pic_desc.transform(source['Name'])
 
-    status = joblib.load(f'../references/ML Training/models/{process}_audit_status.joblib')
-    category = joblib.load(f'../references/ML Training/models/{process}_audit_category.joblib')
-    comments = joblib.load(f'../references/ML Training/models/{process}_audit_comment.joblib')
+    status = joblib.load(f'../references/ML Training/models/status_model.joblib')
+    category = joblib.load(f'../references/ML Training/models/category_model.joblib')
+    comments = joblib.load(f'../references/ML Training/models/comment_model.joblib')
 
     new['status_n'] = status.predict(new)
     source['Status'] = le_status.inverse_transform(new['status_n'])
@@ -101,3 +98,4 @@ def predict(source, process):
     source.to_excel(file_name)
 
     return source
+

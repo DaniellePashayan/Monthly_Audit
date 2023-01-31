@@ -19,9 +19,8 @@ def sutherland_combine(process):
                              usecols=['INVNUM', 'Reason', 'BotName', 'RetrievalStatus', 'RetrievalDescription',
                                       'BOTRequestDate', 'LastModifiedDate'])
     SHS_file['BOTRequestDate'] = pd.to_datetime(SHS_file['BOTRequestDate'], format='%m/%d/%Y %I:%M:%S %p')
-    SHS_file['BOTRequestDate'] = SHS_file['BOTRequestDate'].dt.date
-    SHS_file['LastModifiedDate'] = SHS_file['LastModifiedDate'].dt.date
     SHS_file = SHS_file[SHS_file['BotName'].isin(process_list)]
 
     SHS_file.to_excel('Sutherland.xlsx', index=None)
     return SHS_file
+

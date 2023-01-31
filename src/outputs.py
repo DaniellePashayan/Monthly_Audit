@@ -59,7 +59,7 @@ def output_combine(process):
     else:
         for folder in folders:
             index = folders.index(folder)
-            curr_process = config[process]['InputProcesses'].strip().split(",")[index]
+            curr_process = config[process]['SHSBotName'].strip().split(",")[index]
             print(f'Combining outputs for {curr_process}')
             folder = folder.replace('MM', Month).replace('YYYY', Year)
             file_criteria = folder + '*/*/*'
@@ -78,13 +78,12 @@ def output_combine(process):
         df_pivot = df_pivot.pivot_table(index=['Invoice', 'File Date', 'Process'], columns=['File Type'],
                                         aggfunc=np.count_nonzero).reset_index()
 
-        if 'ACK' in file_types and bot_type == 'MedicalRecords':
+        if 'ACK' in file_types:
             df_pivot.columns = ['Invoice', 'File Date', 'Process', 'ACK', 'Form Letter', 'Records']
-        elif 'ACK' in file_types and bot_type == 'Bundling':
-            df_pivot.columns = ['Invoice', 'File Date', 'Process', 'ACK', 'Form Letter', 'Proof']
         else:
-            df_pivot.columns = ['Invoice', 'File Date', 'Process', 'Form Letter', 'Proof']
+            df_pivot['ACK'] = 0
+            df_pivot.columns = ['Invoice', 'File Date', 'Process', 'ACK', 'Form Letter', 'Records']
         df_pivot.to_excel(output, index=None)
-    return df_pivot
+        return df_pivot
 
 output_combine('Medical Records')
