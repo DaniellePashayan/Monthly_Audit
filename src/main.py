@@ -3,6 +3,7 @@ from inputs import input_combine
 from outputs import output_combine
 from sutherland import sutherland_combine
 from function import merge_format, predict
+import pandas as pd
 
 
 def connection_status():
@@ -27,7 +28,7 @@ def run(process):
         outputs = output_combine(process)
         shs = sutherland_combine(process)
         formatted = merge_format(inputs, outputs, shs, process)
-        final = predict(formatted)
+        final = predict(formatted, process)
         print('done')
 
     else:
@@ -35,4 +36,4 @@ def run(process):
 
 
 if __name__ == '__main__':
-    run('NonCodify')
+    run('Medical Records')
